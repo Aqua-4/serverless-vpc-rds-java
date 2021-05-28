@@ -18,22 +18,184 @@ service: employee-api
 
 # You can pin your service to only deploy with a specific Serverless version
 # Check out our docs for more details
-frameworkVersion: '2'
+frameworkVersion: "2"
 
 provider:
   name: aws
   runtime: java8
+  region: ap-south-1
   lambdaHashingVersion: 20201221
-
-
+  environment:
+    RDS_HOSTNAME: mysql-db.cwbkagad30iq.ap-south-1.rds.amazonaws.com:3306
+    RDS_DB_NAME: emp_db
+    RDS_USERNAME: admin
+    RDS_PASSWORD: cuelogic
+  vpc:
+    securityGroupIds:
+      - Ref: LambdaSecurityGroup
+      - Ref: DBSecurityGroup
+    subnetIds:
+      - Ref: PrivateSubnet1
+      - Ref: PrivateSubnet2
+      - Ref: PrivateSubnet3
 
 # you can add packaging information here
 package:
   # artifact: target/hello-dev.jar
   artifact: "target/${self:service}-${self:provider.stage}.jar"
 
-
 functions:
-  hello:
+  employee:
     handler: com.serverless.Handler
-    
+    events:
+      - httpApi:
+          path: /db
+          method: get
+
+# you can add CloudFormation resource templates here
+resources:
+  Resources:
+    Vpc:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: 10.0.0.0/16
+        Tags:
+          - Key: Name
+            Value: emp-vpc
+
+    # ---------------------------------subnets--------------------------
+    PrivateSubnet1:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: ap-south-1a
+        CidrBlock: 10.0.1.0/24
+        VpcId:
+          Ref: Vpc
+        Tags:
+          - Key: Name
+            Value: PrivateSubnet1
+    PrivateSubnet2:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: ap-south-1b
+        CidrBlock: 10.0.2.0/24
+        VpcId:
+          Ref: Vpc
+        Tags:
+          - Key: Name
+            Value: PrivateSubnet2
+    PrivateSubnet3:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: ap-south-1c
+        CidrBlock: 10.0.3.0/24
+        VpcId:
+          Ref: Vpc
+        Tags:
+          - Key: Name
+            Value: PrivateSubnet3
+    PublicSubnet1:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: ap-south-1a
+        CidrBlock: 10.0.21.0/24
+        VpcId:
+          Ref: Vpc
+        Tags:
+          - Key: Name
+            Value: PublicSubnet1
+
+    # ------------------Sec Group---------------------------------------
+    SshSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupName: ssh-legion
+        GroupDescription: ssh from home
+        SecurityGroupIngress:
+          - CidrIp: 103.124.143.2/32
+            IpProtocol: TCP
+            FromPort: 22
+            ToPort: 22
+        SecurityGroupEgress:
+          - CidrIp: 0.0.0.0/0
+            IpProtocol: All
+
+    DbSecurityGroup:
+      Type: "AWS::EC2::SecurityGroup"
+      Properties:
+        GroupName: db-${self:service}-${self:provider.stage}
+        GroupDescription: Allow local inbound to port 3306 & allow all from SSH, no outbound
+        SecurityGroupIngress:
+          - CidrIp: 10.0.0.0/16
+            IpProtocol: TCP
+            FromPort: 3306
+            ToPort: 3306
+          - IpProtocol: All
+            SourceSecurityGroupId:
+              Ref: SshSecurityGroup
+        SecurityGroupEgress:
+          - IpProtocol: TCP
+            CidrIp: 0.0.0.0/0
+            FromPort: 3306
+            ToPort: 3306
+        VpcId:
+          Ref: Vpc
+
+    LambdaSecurityGroup:
+      Type: "AWS::EC2::SecurityGroup"
+      Properties:
+        GroupName: lambda-${self:service}-${self:provider.stage}
+        GroupDescription: Allow outbound traffic to http & mysql, no inbound
+        # SecurityGroupIngress:
+        #   - IpProtocol: -1
+        #     CidrIp: 127.0.0.1/32
+        SecurityGroupEgress:
+          - IpProtocol: TCP
+            CidrIp: 0.0.0.0/0
+            FromPort: 80
+            ToPort: 80
+          - IpProtocol: TCP
+            CidrIp: 0.0.0.0/0
+            FromPort: 3306
+            ToPort: 3306
+        VpcId:
+          Ref: Vpc
+
+    # --------------------------Route Tables--------------------------------
+
+    PrivateRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId:
+          Ref: Vpc
+        Tags:
+          - Key: Name
+            Value: PrivateRouteTable
+    PrivateRoute:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId:
+          Ref: PrivateRouteTable
+        DestinationCidrBlock: 10.0.0.0/16
+
+    SubnetRouteTableAssociationPrivate1:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: PrivateSubnet1
+        RouteTableId:
+          Ref: PrivateRouteTable
+    SubnetRouteTableAssociationPrivate2:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: PrivateSubnet2
+        RouteTableId:
+          Ref: PrivateRouteTable
+    SubnetRouteTableAssociationPrivate3:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: PrivateSubnet3
+        RouteTableId:
+          Ref: PrivateRouteTable
