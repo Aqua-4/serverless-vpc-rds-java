@@ -168,7 +168,7 @@ resources:
     EmployeeDb:
       Type: AWS::RDS::DBInstance
       Properties:
-        DBInstanceIdentifier: my-db
+        # DBInstanceIdentifier: my-db
         DBName: emp_db
         DBInstanceClass: db.t2.micro
         AllocatedStorage: "20"
@@ -178,8 +178,6 @@ resources:
         MasterUserPassword: cuelogic
         VPCSecurityGroups:
           - Ref: DbSecurityGroup
-        VpcId:
-          Ref: Vpc
 
     # DBUsername:
     #     NoEcho: 'true'
