@@ -208,6 +208,7 @@ resources:
 
     # --------------------------Route Tables--------------------------------
 
+    # Private Route
     PrivateRouteTable:
       Type: AWS::EC2::RouteTable
       Properties:
@@ -246,3 +247,43 @@ resources:
           Ref: PrivateSubnet3
         RouteTableId:
           Ref: PrivateRouteTable
+
+    # Public Route
+    InternetGateway:
+      Type: AWS::EC2::InternetGateway
+      Properties:
+        Tags:
+          - Key: Name
+            Value: EmpInternetGateway
+    VPCGatewayAttachment:
+      Type: AWS::EC2::VPCGatewayAttachment
+      Properties:
+        VpcId:
+          Ref: Vpc
+        InternetGatewayId:
+          Ref: InternetGateway
+
+    PublicRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId:
+          Ref: Vpc
+        Tags:
+          - Key: Name
+            Value: PublicRouteTable
+
+    PublicRoute:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId:
+          Ref: PublicRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId:
+          Ref: InternetGateway
+    SubnetRouteTableAssociationPublic1:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: PublicSubnet1
+        RouteTableId:
+          Ref: PublicRouteTable
