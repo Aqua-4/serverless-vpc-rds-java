@@ -217,14 +217,14 @@ resources:
         Tags:
           - Key: Name
             Value: PrivateRouteTable
-    PrivateRoute:
-      Type: AWS::EC2::Route
-      Properties:
-        RouteTableId:
-          Ref: PrivateRouteTable
-        # DestinationCidrBlock: 10.0.0.0/16
-        InstanceId:
-          Ref: EmployeeDb
+    # PrivateRoute:
+    #   Type: AWS::EC2::Route
+    #   Properties:
+    #     RouteTableId:
+    #       Ref: PrivateRouteTable
+    #     DestinationCidrBlock: 10.0.0.0/16
+    #     InstanceId:
+    #       Ref: EmployeeDb
 
     SubnetRouteTableAssociationPrivate1:
       Type: AWS::EC2::SubnetRouteTableAssociation
