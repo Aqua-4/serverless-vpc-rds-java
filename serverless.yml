@@ -22,11 +22,11 @@ frameworkVersion: "2"
 
 provider:
   name: aws
-  runtime: java8
+  runtime: java8  #use at fn lv.
   region: ap-south-1
   lambdaHashingVersion: 20201221
-  environment:
-    RDS_HOSTNAME: mysql-db.cwbkagad30iq.ap-south-1.rds.amazonaws.com:3306
+  environment: #12 factor app ---|----use param store & secret store
+    RDS_HOSTNAME: my-db.cvbik3j8hhjj.ap-south-1.rds.amazonaws.com:3306
     RDS_DB_NAME: emp_db
     RDS_USERNAME: admin
     RDS_PASSWORD: cuelogic
@@ -64,6 +64,7 @@ resources:
             Value: emp-vpc
 
     # ---------------------------------subnets--------------------------
+    # use region name via params
     PrivateSubnet1:
       Type: AWS::EC2::Subnet
       Properties:
@@ -168,7 +169,7 @@ resources:
     DbSubnetGroup:
       Type: "AWS::RDS::DBSubnetGroup"
       Properties:
-        DBSubnetGroupName: ${self:service}-${self:provider.stage}
+        DBSubnetGroupName: db-${self:service}-${self:provider.stage}
         DBSubnetGroupDescription: Private database subnet group
         SubnetIds:
           - Ref: PrivateSubnet1
@@ -207,6 +208,9 @@ resources:
     #     AllowedPattern: '[a-zA-Z0-9]*'
 
     # --------------------------Route Tables--------------------------------
+
+    # netowkr, compute & storage --- TODO
+    # 
 
     # Private Route
     PrivateRouteTable:
