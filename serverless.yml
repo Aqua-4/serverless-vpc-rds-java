@@ -113,7 +113,7 @@ resources:
         GroupName: ssh-legion
         GroupDescription: ssh from home
         SecurityGroupIngress:
-          - CidrIp: 103.124.143.2/32
+          - CidrIp:  49.36.38.82/32
             IpProtocol: TCP
             FromPort: 22
             ToPort: 22
@@ -163,6 +163,24 @@ resources:
             ToPort: 3306
         VpcId:
           Ref: Vpc
+    # ---------------------------EC2 Jump Start -----------------------------
+
+    NeoInstance:
+      Type: AWS::EC2::Instance
+      Properties:
+        InstanceType: t2.micro
+        KeyName: "legion"
+        ImageId: ami-010aff33ed5991201
+        NetworkInterfaces: 
+          - AssociatePublicIpAddress: true
+            DeviceIndex: "0"
+            SubnetId: 
+              Ref: PublicSubnet1
+            GroupSet:
+              - Ref: SshSecurityGroup
+        Tags:
+          - Key: Name
+            Value: NeoInstance
 
     # --------------------------RDS Database--------------------------------
 
@@ -209,7 +227,7 @@ resources:
 
     # --------------------------Route Tables--------------------------------
 
-    # netowkr, compute & storage --- TODO
+    # network, compute & storage --- TODO
     # 
 
     # Private Route
