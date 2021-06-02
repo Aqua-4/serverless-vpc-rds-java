@@ -1,0 +1,194 @@
+Resources:
+  Vpc:
+      Type: AWS::EC2::VPC
+      Properties:
+        CidrBlock: 10.0.0.0/16
+        Tags:
+          - Key: Name
+            Value: emp-vpc
+
+    # ---------------------------------subnets--------------------------
+    # use region name via params
+  PrivateSubnet1:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: ${self:provider.region}a
+        CidrBlock: 10.0.1.0/24
+        VpcId:
+          Ref: Vpc
+        Tags:
+          - Key: Name
+            Value: PrivateSubnet1
+  PrivateSubnet2:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: ${self:provider.region}b
+        CidrBlock: 10.0.2.0/24
+        VpcId:
+          Ref: Vpc
+        Tags:
+          - Key: Name
+            Value: PrivateSubnet2
+  PrivateSubnet3:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: ${self:provider.region}c
+        CidrBlock: 10.0.3.0/24
+        VpcId:
+          Ref: Vpc
+        Tags:
+          - Key: Name
+            Value: PrivateSubnet3
+  PublicSubnet1:
+      Type: AWS::EC2::Subnet
+      Properties:
+        AvailabilityZone: ${self:provider.region}a
+        CidrBlock: 10.0.21.0/24
+        VpcId:
+          Ref: Vpc
+        Tags:
+          - Key: Name
+            Value: PublicSubnet1
+
+    # ------------------Sec Group---------------------------------------
+  SshSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupName: ssh-legion
+        GroupDescription: ssh from home
+        SecurityGroupIngress:
+          - CidrIp:  49.36.38.82/32
+            IpProtocol: TCP
+            FromPort: 22
+            ToPort: 22
+        SecurityGroupEgress:
+          - CidrIp: 0.0.0.0/0
+            IpProtocol: All
+        VpcId:
+          Ref: Vpc
+
+  DbSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupName: db-${self:service}-${self:provider.stage}
+        GroupDescription: Allow local inbound to port 3306 & allow all from SSH, no outbound
+        SecurityGroupIngress:
+          - CidrIp: 10.0.0.0/16
+            IpProtocol: TCP
+            FromPort: 3306
+            ToPort: 3306
+          - IpProtocol: All
+            SourceSecurityGroupId:
+              Ref: SshSecurityGroup
+        SecurityGroupEgress:
+          - CidrIp: 127.0.0.1/32
+            IpProtocol: TCP
+            FromPort: 3306
+            ToPort: 3306
+        VpcId:
+          Ref: Vpc
+
+  LambdaSecurityGroup:
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupName: lambda-${self:service}-${self:provider.stage}
+        GroupDescription: Allow outbound traffic to http & mysql, no inbound
+        # SecurityGroupIngress:
+        #   - IpProtocol: -1
+        #     CidrIp: 127.0.0.1/32
+        SecurityGroupEgress:
+          - IpProtocol: TCP
+            CidrIp: 0.0.0.0/0
+            FromPort: 80
+            ToPort: 80
+          - IpProtocol: TCP
+            CidrIp: 0.0.0.0/0
+            FromPort: 3306
+            ToPort: 3306
+        VpcId:
+          Ref: Vpc
+    
+    # --------------------------Route Tables--------------------------------
+
+    # network, compute & storage --- TODO
+    # 
+
+    # Private Route
+  PrivateRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId:
+          Ref: Vpc
+        Tags:
+          - Key: Name
+            Value: PrivateRouteTable
+    # PrivateRoute:
+    #   Type: AWS::EC2::Route
+    #   Properties:
+    #     RouteTableId:
+    #       Ref: PrivateRouteTable
+    #     DestinationCidrBlock: 10.0.0.0/16
+    #     InstanceId:
+    #       Ref: EmployeeDb
+
+  SubnetRouteTableAssociationPrivate1:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: PrivateSubnet1
+        RouteTableId:
+          Ref: PrivateRouteTable
+  SubnetRouteTableAssociationPrivate2:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: PrivateSubnet2
+        RouteTableId:
+          Ref: PrivateRouteTable
+  SubnetRouteTableAssociationPrivate3:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: PrivateSubnet3
+        RouteTableId:
+          Ref: PrivateRouteTable
+
+    # Public Route
+  InternetGateway:
+      Type: AWS::EC2::InternetGateway
+      Properties:
+        Tags:
+          - Key: Name
+            Value: EmpInternetGateway
+  VPCGatewayAttachment:
+      Type: AWS::EC2::VPCGatewayAttachment
+      Properties:
+        VpcId:
+          Ref: Vpc
+        InternetGatewayId:
+          Ref: InternetGateway
+
+  PublicRouteTable:
+      Type: AWS::EC2::RouteTable
+      Properties:
+        VpcId:
+          Ref: Vpc
+        Tags:
+          - Key: Name
+            Value: PublicRouteTable
+
+  PublicRoute:
+      Type: AWS::EC2::Route
+      Properties:
+        RouteTableId:
+          Ref: PublicRouteTable
+        DestinationCidrBlock: 0.0.0.0/0
+        GatewayId:
+          Ref: InternetGateway
+  SubnetRouteTableAssociationPublic1:
+      Type: AWS::EC2::SubnetRouteTableAssociation
+      Properties:
+        SubnetId:
+          Ref: PublicSubnet1
+        RouteTableId:
+          Ref: PublicRouteTable

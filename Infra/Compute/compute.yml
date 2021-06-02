@@ -1,0 +1,18 @@
+# ---------------------------EC2 Jump Start -----------------------------
+Resources:
+  NeoInstance:
+      Type: AWS::EC2::Instance
+      Properties:
+        InstanceType: t2.micro
+        KeyName: "legion"
+        ImageId: ami-010aff33ed5991201
+        NetworkInterfaces: 
+          - AssociatePublicIpAddress: true
+            DeviceIndex: "0"
+            SubnetId: 
+              Ref: PublicSubnet1
+            GroupSet:
+              - Ref: SshSecurityGroup
+        Tags:
+          - Key: Name
+            Value: NeoInstance  
