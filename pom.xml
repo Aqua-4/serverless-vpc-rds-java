@@ -2,10 +2,10 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.serverless</groupId>
-  <artifactId>employee-api</artifactId>
+  <artifactId>emp-api</artifactId>
   <packaging>jar</packaging>
   <version>dev</version>
-  <name>employee-api</name>
+  <name>emp-api</name>
 
   <properties>
     <maven.compiler.source>1.8</maven.compiler.source>
@@ -14,6 +14,12 @@
   </properties>
 
   <dependencies>
+    <!-- https://mvnrepository.com/artifact/mysql/mysql-connector-java -->
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>8.0.25</version>
+    </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
       <artifactId>aws-lambda-java-log4j2</artifactId>

@@ -11,7 +11,7 @@
 #
 # Happy Coding!
 
-service: employee-api
+service: emp-api
 # app and org for use with dashboard.serverless.com
 #app: your-app-name
 #org: your-org-name
@@ -25,10 +25,10 @@ provider:
   runtime: java8  #use at fn lv.
   lambdaHashingVersion: 20201221
   environment: #12 factor app ---|----use param store & secret store
-    RDS_HOSTNAME: my-db.cvbik3j8hhjj.${self:provider.region}.rds.amazonaws.com:3306
+    RDS_HOSTNAME: !Join [ ":", [!GetAtt EmployeeDb.Endpoint.Address, '3306'] ]
     RDS_DB_NAME: emp_db
-    RDS_USERNAME: ${ssm:/dev/south/rds/username~true}
-    RDS_PASSWORD: ${ssm:/dev/south/rds/password~true}
+    RDS_USERNAME: ${ssm:/dev/south/rds/master_username~true}
+    RDS_PASSWORD: ${ssm:/dev/south/rds/master_password~true}
   vpc:
     securityGroupIds:
       - Ref: LambdaSecurityGroup
@@ -50,9 +50,15 @@ functions:
       - httpApi:
           path: /db
           method: get
+          #authorizer:
+          #type: COGNITO_USER_POOLS
+          #authorizerId:
+            #Ref: ApiGatewayAuthorizer
+          
 
 # you can add CloudFormation resource templates here
 resources:
 - ${file(./Infra/Network/network.yml)}
+#- ${file(./Infra/Security/cognito-user-pool.yml)}
 - ${file(./Infra/Compute/compute.yml)}
 - ${file(./Infra/Storage/storage.yml)} 
